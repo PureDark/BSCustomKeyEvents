@@ -114,97 +114,114 @@ namespace AvatarScriptPack
         // Use this for initialization
         void Start()
         {
-            checkVive = true;
-            checkOculus = (KeyCode)OculusTriggerButton != (KeyCode)ViveTriggerButton;
-            checkWMR = (KeyCode)WMRTriggerButton != (KeyCode)ViveTriggerButton && (KeyCode)WMRTriggerButton != (KeyCode)OculusTriggerButton;
+            string model = XRDevice.model != null ? XRDevice.model.ToLower() : "";
+            if (model.Contains("vive"))
+            {
+                checkVive = true;
+                checkOculus = false;
+                checkWMR = false;
+            }
+            else if (model.Contains("oculus"))
+            {
+                checkVive = false;
+                checkOculus = true;
+                checkWMR = false;
+            }
+            else
+            {
+                checkVive = false;
+                checkOculus = false;
+                checkWMR = true;
+            }
         }
 
         // Update is called once per frame
         void Update()
         {
-
-            for(int i = 0; i < 3; i++)
+            KeyCode triggerButton = (checkVive)
+                                           ? (KeyCode)ViveTriggerButton
+                                           : (checkOculus)
+                                           ? (KeyCode)OculusTriggerButton
+                                           : (checkWMR)
+                                           ? (KeyCode)WMRTriggerButton
+                                           : KeyCode.None;
+            if (triggerButton == KeyCode.None)
+                return;
+            bool allowCheck = true;
+            if (triggerButton == (KeyCode)ViveButton.LeftTrigger || triggerButton == (KeyCode)ViveButton.RightTrigger)
             {
-                KeyCode triggerButton = (i == 0 && checkVive)
-                                        ? (KeyCode)ViveTriggerButton
-                                        : (i == 1 && checkOculus)
-                                        ? (KeyCode)OculusTriggerButton
-                                        : (i == 2 && checkWMR)
-                                        ? (KeyCode)WMRTriggerButton
-                                        : KeyCode.None;
-                if (triggerButton == KeyCode.None)
-                    continue;
-                bool allowCheck = true;
-                if (triggerButton == (KeyCode)ViveButton.LeftTrigger || triggerButton == (KeyCode)ViveButton.RightTrigger)
+                //float triggerValue = VRControllersInputManager.TriggerValue((triggerButton == ViveButton.LeftTrigger) ? XRNode.LeftHand : XRNode.RightHand);
+                string axisName = (triggerButton == (KeyCode)ViveButton.LeftTrigger) ? "TriggerLeftHand" : "TriggerRightHand";
+                try
                 {
-                    //float triggerValue = VRControllersInputManager.TriggerValue((triggerButton == ViveButton.LeftTrigger) ? XRNode.LeftHand : XRNode.RightHand);
-                    string axisName = (triggerButton == (KeyCode)ViveButton.LeftTrigger) ? "TriggerLeftHand" : "TriggerRightHand";
-                    try
-                    {
-                        float triggerValue = Input.GetAxis(axisName);
-                        if (triggerValue < 0.1f)
-                            allowCheck = false;
-                    }
-                    catch (Exception e)
-                    {
-                    }
+                    float triggerValue = Input.GetAxis(axisName);
+                    if (triggerValue < 0.1f)
+                        allowCheck = false;
                 }
-
-                if (allowCheck && Input.GetKeyDown(triggerButton))
+                catch (Exception e)
                 {
-                    //Debug.Log(pressedKey + " is pressed");
-                    checkDoubleClick = (Time.time - pressTime <= interval);
-                    pressTime = Time.time;
-                    OnPress();
-                    checkLongClick = true;
-                    checkClick = false;
-                }
-                else if (allowCheck && Input.GetKey(triggerButton))
-                {
-                    //Debug.Log(pressedKey + " is hold");
-                    OnHold();
-                    if (checkLongClick && Time.time - pressTime >= longClickInterval)
-                    {
-                        checkLongClick = false;
-                        OnLongClick();
-                        longClicked = true;
-                    }
-                }
-                else if (Input.GetKeyUp(triggerButton))
-                {
-                    //Debug.Log(pressedKey + " is up");
-                    releaseTime = Time.time;
-                    OnRelease();
-                    if (longClicked)
-                    {
-                        OnReleaseAfterLongClick();
-                        longClicked = false;
-                    }
-                    //Debug.Log("GetKeyUp : releaseTime - pressTime = " + (releaseTime - pressTime));
-                    if (releaseTime - pressTime <= interval)
-                    {
-                        if (checkDoubleClick)
-                        {
-                            OnDoubleClick();
-                        }
-                        else
-                        {
-                            checkClick = true;
-                        }
-                    }
-                }
-                else if (checkClick && Time.time - releaseTime > interval)
-                {
-                    checkClick = false;
-                    OnClick();
                 }
             }
-            
+
+            if (allowCheck && Input.GetKeyDown(triggerButton))
+            {
+                //Debug.Log(pressedKey + " is pressed");
+                checkDoubleClick = (Time.time - pressTime <= interval);
+                pressTime = Time.time;
+                OnPress();
+                checkLongClick = true;
+                checkClick = false;
+            }
+            else if (allowCheck && Input.GetKey(triggerButton))
+            {
+                //Debug.Log(pressedKey + " is hold");
+                OnHold();
+                if (checkLongClick && Time.time - pressTime >= longClickInterval)
+                {
+                    checkLongClick = false;
+                    OnLongClick();
+                    longClicked = true;
+                }
+            }
+            else if (Input.GetKeyUp(triggerButton))
+            {
+                //Debug.Log(pressedKey + " is up");
+                releaseTime = Time.time;
+                OnRelease();
+                if (longClicked)
+                {
+                    OnReleaseAfterLongClick();
+                    longClicked = false;
+                }
+                //Debug.Log("GetKeyUp : releaseTime - pressTime = " + (releaseTime - pressTime));
+                if (releaseTime - pressTime <= interval)
+                {
+                    if (checkDoubleClick)
+                    {
+                        OnDoubleClick();
+                    }
+                    else
+                    {
+                        checkClick = true;
+                    }
+                }
+            }
+            else if (checkClick && Time.time - releaseTime > interval)
+            {
+                checkClick = false;
+                OnClick();
+            }
+
         }
 
         void OnClick()
         {
             //Debug.Log("OnClick");
+            Console.WriteLine("OnClick");
+            foreach(MonoBehaviour comp in gameObject.GetComponentsInChildren<MonoBehaviour>())
+            {
+                Console.WriteLine("name: " + comp.name + " : " + comp);
+            }
             clickEvents.Invoke();
         }
 
