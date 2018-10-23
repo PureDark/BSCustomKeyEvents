@@ -67,13 +67,13 @@ namespace AvatarScriptPack
             None = KeyCode.None
         }
 
-        [Tooltip("Button to trigger the animation.")]
+        [Tooltip("Button to trigger the events.")]
         public ViveButton ViveTriggerButton = ViveButton.None;
 
-        [Tooltip("Button to trigger the animation.")]
+        [Tooltip("Button to trigger the events.")]
         public OculusButton OculusTriggerButton = OculusButton.None;
 
-        [Tooltip("Button to trigger the animation.")]
+        [Tooltip("Button to trigger the events.")]
         public WMRButton WMRTriggerButton = WMRButton.None;
 
         [Space(20)]
@@ -96,7 +96,7 @@ namespace AvatarScriptPack
         [Tooltip("Called when the release event is triggered.")]
         public UnityEvent releaseEvents = new UnityEvent();
 
-        [Tooltip("Called when the released after long click.")]
+        [Tooltip("Called when released after long click.")]
         public UnityEvent releaseAfterLongClickEvents = new UnityEvent();
 
         protected bool checkVive, checkOculus, checkWMR;
@@ -217,11 +217,6 @@ namespace AvatarScriptPack
         void OnClick()
         {
             //Debug.Log("OnClick");
-            Console.WriteLine("OnClick");
-            foreach(MonoBehaviour comp in gameObject.GetComponentsInChildren<MonoBehaviour>())
-            {
-                Console.WriteLine("name: " + comp.name + " : " + comp);
-            }
             clickEvents.Invoke();
         }
 
