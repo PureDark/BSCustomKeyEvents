@@ -107,8 +107,9 @@ namespace AvatarScriptPack
         protected bool checkClick = false;
         protected bool checkDoubleClick = false;
         protected bool checkLongClick = false;
-        protected bool triggerButtonDown = false;
         protected bool longClicked = false;
+        
+        protected bool triggerPressed = false;
 
 
         // Use this for initialization
@@ -147,70 +148,115 @@ namespace AvatarScriptPack
                                            : KeyCode.None;
             if (triggerButton == KeyCode.None)
                 return;
-            bool allowCheck = true;
-            if (triggerButton == (KeyCode)ViveButton.LeftTrigger || triggerButton == (KeyCode)ViveButton.RightTrigger)
+            float triggerValue;
+            bool isTrigger = triggerButton == (KeyCode)ViveButton.LeftTrigger || triggerButton == (KeyCode)ViveButton.RightTrigger;
+            if (isTrigger)
             {
-                //float triggerValue = VRControllersInputManager.TriggerValue((triggerButton == ViveButton.LeftTrigger) ? XRNode.LeftHand : XRNode.RightHand);
                 string axisName = (triggerButton == (KeyCode)ViveButton.LeftTrigger) ? "TriggerLeftHand" : "TriggerRightHand";
-                try
+                triggerValue = Input.GetAxis(axisName);
+                
+                if (triggerValue > 0.5f)
                 {
-                    float triggerValue = Input.GetAxis(axisName);
-                    if (triggerValue < 0.1f)
-                        allowCheck = false;
-                }
-                catch (Exception e)
-                {
-                }
-            }
-
-            if (allowCheck && Input.GetKeyDown(triggerButton))
-            {
-                //Debug.Log(pressedKey + " is pressed");
-                checkDoubleClick = (Time.time - pressTime <= interval);
-                pressTime = Time.time;
-                OnPress();
-                checkLongClick = true;
-                checkClick = false;
-            }
-            else if (allowCheck && Input.GetKey(triggerButton))
-            {
-                //Debug.Log(pressedKey + " is hold");
-                OnHold();
-                if (checkLongClick && Time.time - pressTime >= longClickInterval)
-                {
-                    checkLongClick = false;
-                    OnLongClick();
-                    longClicked = true;
-                }
-            }
-            else if (Input.GetKeyUp(triggerButton))
-            {
-                //Debug.Log(pressedKey + " is up");
-                releaseTime = Time.time;
-                OnRelease();
-                if (longClicked)
-                {
-                    OnReleaseAfterLongClick();
-                    longClicked = false;
-                }
-                //Debug.Log("GetKeyUp : releaseTime - pressTime = " + (releaseTime - pressTime));
-                if (releaseTime - pressTime <= interval)
-                {
-                    if (checkDoubleClick)
+                    //GetKeyDown
+                    if (!triggerPressed)
                     {
-                        OnDoubleClick();
+                        triggerPressed = true;
+                        checkDoubleClick = (Time.time - pressTime <= interval);
+                        pressTime = Time.time;
+                        OnPress();
+                        checkLongClick = true;
+                        checkClick = false;
                     }
-                    else
+                    //GetKey
+                    OnHold();
+                    if (checkLongClick && Time.time - pressTime >= longClickInterval)
                     {
-                        checkClick = true;
+                        checkLongClick = false;
+                        OnLongClick();
+                        longClicked = true;
                     }
                 }
+                else if (triggerPressed && triggerValue < 0.1f)
+                {
+                    //GetKeyUp
+                    triggerPressed = false;
+                    releaseTime = Time.time;
+                    OnRelease();
+                    if (longClicked)
+                    {
+                        OnReleaseAfterLongClick();
+                        longClicked = false;
+                    }
+                    if (releaseTime - pressTime <= interval)
+                    {
+                        if (checkDoubleClick)
+                        {
+                            OnDoubleClick();
+                        }
+                        else
+                        {
+                            checkClick = true;
+                        }
+                    }
+                }
+                else if (checkClick && Time.time - releaseTime > interval)
+                {
+                    checkClick = false;
+                    OnClick();
+                }
             }
-            else if (checkClick && Time.time - releaseTime > interval)
+            else
             {
-                checkClick = false;
-                OnClick();
+                if (Input.GetKeyDown(triggerButton))
+                {
+                    //Debug.Log(pressedKey + " is pressed");
+                    checkDoubleClick = (Time.time - pressTime <= interval);
+                    pressTime = Time.time;
+                    OnPress();
+                    checkLongClick = true;
+                    checkClick = false;
+                }
+                else if (Input.GetKey(triggerButton))
+                {
+                    //Debug.Log(pressedKey + " is hold");
+                    OnHold();
+                    if (checkLongClick && Time.time - pressTime >= longClickInterval)
+                    {
+                        checkLongClick = false;
+                        OnLongClick();
+                        longClicked = true;
+                    }
+                }
+                else if (Input.GetKeyUp(triggerButton))
+                {
+                    //Debug.Log(pressedKey + " is up");
+                    releaseTime = Time.time;
+                    OnRelease();
+                    if (longClicked)
+                    {
+                        OnReleaseAfterLongClick();
+                        longClicked = false;
+                    }
+                    //Debug.Log("GetKeyUp : releaseTime - pressTime = " + (releaseTime - pressTime));
+                    if (releaseTime - pressTime <= interval)
+                    {
+                        if (checkDoubleClick)
+                        {
+                            OnDoubleClick();
+                        }
+                        else
+                        {
+                            checkClick = true;
+                        }
+                    }
+                }
+                else if (checkClick && Time.time - releaseTime > interval)
+                {
+                    checkClick = false;
+                    OnClick();
+                }
             }
+            
 
         }
 
